@@ -1,55 +1,126 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <cstdlib> // Para rand() y srand()
-#include <ctime>   // Para time()
-
-// [EDUARDO - TODO #20] Incluye el header "Producto.h" para poder crear objetos.
+#include <cstdlib> 
+#include <ctime>   
+#include <chrono>  // Para medir tiempo con precision
 #include "Producto.h"
+#include "Algoritmos.h" // Incluimos nuestros algoritmos
 
 using namespace std;
+using namespace std::chrono;
+
+// Funciones de comparacion para los sorts
+bool precioAsc(const Producto& a, const Producto& b) { return a.getPrecio() < b.getPrecio(); }
+bool califDesc(const Producto& a, const Producto& b) { return a.getCalificacionPromedio() > b.getCalificacionPromedio(); }
+bool idAsc(const Producto& a, const Producto& b) { return a.getId() < b.getId(); }
 
 int main() {
-    // [FEDE - TODO #21] Inicializa la semilla aleatoria usando srand(time(0)).
-    // Esto asegura que obtengamos números diferentes cada vez que corramos el programa.
     srand(time(0));
 
-    // [EDUARDO - TODO #22] Crea un vector (o arreglo) para guardar los 50 objetos Producto.
-    // Ejemplo: vector<Producto> listaProductos;
+    vector<Producto> listaProductos;
 
-    // [EDUARDO - TODO #23] Crea un arreglo constante de strings para las 'Categorías'.
-    // Ejemplo: "Electrónica", "Ropa", "Libros", "Hogar".
-    
-    // [EDUARDO - TODO #24] Crea un arreglo constante de strings para 'Nombres de Producto'.
-    // Ejemplo: "Smartphone", "Camiseta", "Sofá", "Novela", "Laptop", "Pantalones".
+    // Datos para generacion aleatoria
+    const string categorias[] = {"Electrónica", "Ropa", "Libros", "Hogar", "Deportes"};
+    const int cantidadDeCategorias = 5;
 
+    const string nombres[] = {"Smartphone", "Camiseta", "Sofá", "Novela", "Laptop", "Pantalones", "Reloj", "Mesa", "Auriculares", "Zapatos"};
+    const int cantidadDeNombres = 10;
+
+    cout << "--- Generando 50 Productos ---\n";
     for (int i = 0; i < 50; i++) {
-        
-        // [FEDE - TODO #26] Genera un ID secuencial.
-        // Como 'i' aumenta en 1 cada vez, el 'id' puede ser simplemente 'i + 1'.
         int id = i + 1;
-        // [FEDE - TODO #27] Genera un índice aleatorio para elegir un Nombre y una Categoría de los arreglos de Eduardo.
-        // Usa el operador módulo %. Ejemplo: rand() % cantidadDeNombres.
-        int idNombre = rand() % cantidadDeNombres;
-        int idCategoria = rand() % cantidadDeCategorias;
-        // [FEDE - TODO #28] Genera un Precio aleatorio (float).
-        // Lógica: (rand() % rango) + minimo. Asegúrate de convertirlo a float.
-        float precio = (float)(rand() % 991) + 10;
-        // [FEDE - TODO #29] Genera un Stock aleatorio (int).
-        // Lógica: Número aleatorio entre 0 y 100.
-        int stock = rand() % 101;
-        // [FEDE - TODO #30] Genera una Calificación Promedio aleatoria (float).
-        // Lógica: Flotante aleatorio entre 1.0 y 5.0.
-        float CalProale = (rand() % 401)/100.0f + 1.0f;
-        // [EDUARDO - TODO #31] Instancia un nuevo objeto 'Producto' usando los valores que Fede generó.
-        // Pasa las variables al constructor.
+        
+        // Seleccion aleatoria de arrays predefinidos
+        string nombre = nombres[rand() % cantidadDeNombres];
+        string categoria = categorias[rand() % cantidadDeCategorias];
+        
+        // (rand() % (max-min+1)) + min
+        float precio = (float)(rand() % 991) + 10; // 10 a 1000
+        int stock = rand() % 101;                  // 0 a 100
+        
+        // Genera 100 a 500, divide por 100.0 para obtener 1.0 a 5.0
+        float calif = (rand() % 401 + 100) / 100.0f;
 
-        // [EDUARDO - TODO #32] Agrega este nuevo objeto al vector 'listaProductos' (usando push_back).
+        Producto p(id, nombre, precio, categoria, stock, calif);
+        listaProductos.push_back(p);
+    }
+    
+    // Copiamos vectores para que cada algoritmo ordene los mismos datos desordenados
+    vector<Producto> vecInsert = listaProductos;
+    vector<Producto> vecQuick = listaProductos;
+    vector<Producto> vecMerge = listaProductos;
+
+    cout << "\n--- Midiendo Tiempos de Ordenamiento (Precio Ascendente) ---\n";
+    
+    // 1. Insertion Sort
+    auto start = high_resolution_clock::now();
+    insertionSort(vecInsert, precioAsc);
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(stop - start);
+    cout << "Insertion Sort: " << duration.count() << " microsegundos.\n";
+
+    // 2. Quick Sort
+    start = high_resolution_clock::now();
+    runQuickSort(vecQuick, precioAsc);
+    stop = high_resolution_clock::now();
+    duration = duration_cast<microseconds>(stop - start);
+    cout << "Quick Sort:     " << duration.count() << " microsegundos.\n";
+
+    // 3. Merge Sort
+    start = high_resolution_clock::now();
+    runMergeSort(vecMerge, precioAsc);
+    stop = high_resolution_clock::now();
+    duration = duration_cast<microseconds>(stop - start);
+    cout << "Merge Sort:     " << duration.count() << " microsegundos.\n";
+
+    // Mostramos el primero y ultimo del vector ordenado (Quick) para verificar
+    cout << "Mas barato: " << vecQuick.front().getPrecio() << " | Mas caro: " << vecQuick.back().getPrecio() << "\n";
+
+
+    cout << "\n--- Midiendo Tiempos de Ordenamiento (Calif Descendente) ---\n";
+    // Reiniciamos vectores desordenados
+    vecInsert = listaProductos;
+    vecQuick = listaProductos;
+    
+    start = high_resolution_clock::now();
+    insertionSort(vecInsert, califDesc);
+    stop = high_resolution_clock::now();
+    cout << "Insertion Sort: " << duration_cast<microseconds>(stop - start).count() << " microsegundos.\n";
+
+    start = high_resolution_clock::now();
+    runQuickSort(vecQuick, califDesc);
+    stop = high_resolution_clock::now();
+    cout << "Quick Sort:     " << duration_cast<microseconds>(stop - start).count() << " microsegundos.\n";
+
+    cout << "Mejor Calif: " << vecQuick.front().getCalificacionPromedio() << " | Peor Calif: " << vecQuick.back().getCalificacionPromedio() << "\n";
+
+    cout << "\n--- Parte 3: Busqueda Binaria por ID ---\n";
+    
+    // Primero ordenamos por ID (Requisito para busqueda binaria)
+    runQuickSort(listaProductos, idAsc);
+
+    auto startSearch = high_resolution_clock::now();
+    int encontrados = 0;
+    int noEncontrados = 0;
+
+    // 10 busquedas existentes (IDs 1-50 existen)
+    for(int i=0; i<10; i++) {
+        int target = (rand() % 50) + 1;
+        if(binarySearch(listaProductos, target) != -1) encontrados++;
     }
 
-    // [EDUARDO & FEDE - TODO #33] Creen un bucle final para recorrer el vector 
-    // y llamar a 'mostrarInfo()' en cada producto para probar que el código funciona.
-    // Podriamos hacer que recorra los id?
+    // 10 busquedas NO existentes (IDs > 50)
+    for(int i=0; i<10; i++) {
+        int target = (rand() % 50) + 100;
+        if(binarySearch(listaProductos, target) == -1) noEncontrados++;
+    }
+    
+    auto stopSearch = high_resolution_clock::now();
+    auto durationSearch = duration_cast<nanoseconds>(stopSearch - startSearch); // Nano porque es muy rapido
+
+    cout << "Tiempo total (20 busquedas): " << durationSearch.count() << " nanosegundos.\n";
+    cout << "Exito: Encontrados " << encontrados << "/10 existentes, Confirmados " << noEncontrados << "/10 no existentes.\n";
 
     return 0;
 }
