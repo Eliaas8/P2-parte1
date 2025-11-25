@@ -15,11 +15,48 @@ bool precioAsc(const Producto& a, const Producto& b) { return a.getPrecio() < b.
 bool califDesc(const Producto& a, const Producto& b) { return a.getCalificacionPromedio() > b.getCalificacionPromedio(); }
 bool idAsc(const Producto& a, const Producto& b) { return a.getId() < b.getId(); }
 
+// --- NUEVA FUNCION PARA MOSTRAR DATOS DE FORMA ORDENADA ---
+// Recibe el vector y muestra 10 elementos por pagina
+void mostrarProductosPaginado(const vector<Producto>& lista) {
+    int total = lista.size();
+    if (total == 0) {
+        cout << "No hay productos para mostrar.\n";
+        return;
+    }
+
+    char opcion = 's';
+    int itemsPorPagina = 10;
+
+    for (int i = 0; i < total; i += itemsPorPagina) {
+        cout << "\n--- Mostrando productos " << i + 1 << " al " << min(i + itemsPorPagina, total) << " ---\n";
+        cout << "ID\tNombre\t\tPrecio\t\tCalif\n"; // Encabezados simples
+        cout << "--------------------------------------------------\n";
+
+        // Bucle interno para mostrar solo el lote actual
+        for (int j = i; j < i + itemsPorPagina && j < total; j++) {
+            // Usamos getters del objeto. Asumo que getNombre() devuelve string corto, si es largo puede descuadrar
+            cout << lista[j].getId() << "\t" 
+                 << lista[j].getNombre() << "\t\t$" 
+                 << lista[j].getPrecio() << "\t\t" 
+                 << lista[j].getCalificacionPromedio() << "\n";
+        }
+
+        // Si quedan mas productos, preguntamos si quiere seguir
+        if (i + itemsPorPagina < total) {
+            cout << "\n¿Ver siguientes 10? (s/n): ";
+            cin >> opcion;
+            if (opcion == 'n' || opcion == 'N') break;
+        } else {
+            cout << "\n--- Fin de la lista ---\n";
+        }
+    }
+}
+
 // MENÚ VISUAL
 void menuVisual() {
     cout << "\n========= MENU PRINCIPAL =========\n";
     cout << "1. Generar 50 Productos\n";
-    cout << "2. Comparar Algoritmos (Sort)\n";
+    cout << "2. Comparar Algoritmos (Sort) y Ver Lista\n";
     cout << "3. Busqueda Binaria (Buscar ID especifico)\n";
     cout << "4. Medir tiempos de busqueda (Test Masivo)\n";
     cout << "5. Salir\n";
@@ -30,10 +67,10 @@ void menuVisual() {
 int main() {
     srand(time(0));
     
-    vector<Producto> listaProductos; // El vector debe vivir fuera del bucle para persistir datos
+    vector<Producto> listaProductos; 
     int opcion = 0;
 
-    // Datos para generacion aleatoria (Moverlos fuera del switch evita re-declaracion constante)
+    // Datos para generacion aleatoria
     const string categorias[] = {"Electrónica", "Ropa", "Libros", "Hogar", "Deportes"};
     const int cantidadDeCategorias = 5;
     const string nombres[] = {"Smartphone", "Camiseta", "Sofá", "Novela", "Laptop", "Pantalones", "Reloj", "Mesa", "Auriculares", "Zapatos"};
@@ -42,7 +79,6 @@ int main() {
     do {
         menuVisual();
         if (!(cin >> opcion)) { 
-            // Limpieza del buffer si el usuario ingresa texto en lugar de numeros
             cout << "Entrada invalida.\n";
             cin.clear();
             cin.ignore(10000, '\n');
@@ -52,26 +88,28 @@ int main() {
         switch(opcion) {
             case 1: { 
                 cout << "--- Generando 50 Productos ---\n";
-                listaProductos.clear(); // Limpiamos para no acumular infinitamente si se presiona 1 varias veces
+                listaProductos.clear(); 
                 
                 for (int i = 0; i < 50; i++) {
                     int id = i + 1;
-                    
-                    // Seleccion aleatoria de arrays predefinidos
                     string nombre = nombres[rand() % cantidadDeNombres];
                     string categoria = categorias[rand() % cantidadDeCategorias];
-                    
-                    // (rand() % (max-min+1)) + min
-                    float precio = (float)(rand() % 991) + 10; // 10 a 1000
-                    int stock = rand() % 101;                  // 0 a 100
-                    
-                    // Genera 100 a 500, divide por 100.0 para obtener 1.0 a 5.0
+                    float precio = (float)(rand() % 991) + 10; 
+                    int stock = rand() % 101;                  
                     float calif = (rand() % 401 + 100) / 100.0f;
 
                     Producto p(id, nombre, precio, categoria, stock, calif);
                     listaProductos.push_back(p);
                 }
                 cout << "Productos generados exitosamente.\n";
+
+                // Preguntamos si quiere ver la lista generada
+                char verLista;
+                cout << "¿Desea ver la lista generada? (s/n): ";
+                cin >> verLista;
+                if (verLista == 's' || verLista == 'S') {
+                    mostrarProductosPaginado(listaProductos);
+                }
                 break;
             }
 
@@ -85,7 +123,6 @@ int main() {
                 cout << "\nCriterio: 1. Precio (Asc) | 2. Calif (Desc): ";
                 cin >> subOpcion;
 
-                // Copiamos vectores para que cada algoritmo ordene los mismos datos desordenados
                 vector<Producto> vecInsert = listaProductos;
                 vector<Producto> vecQuick = listaProductos;
                 vector<Producto> vecMerge = listaProductos;
@@ -93,32 +130,22 @@ int main() {
                 if (subOpcion == 1) {
                     cout << "\n--- Midiendo Tiempos de Ordenamiento (Precio Ascendente) ---\n";
                     
-                    // 1. Insertion Sort
                     auto start = high_resolution_clock::now();
                     insertionSort(vecInsert, precioAsc);
                     auto stop = high_resolution_clock::now();
-                    auto duration = duration_cast<microseconds>(stop - start);
-                    cout << "Insertion Sort: " << duration.count() << " microsegundos.\n";
+                    cout << "Insertion Sort: " << duration_cast<microseconds>(stop - start).count() << " microsegundos.\n";
 
-                    // 2. Quick Sort
                     start = high_resolution_clock::now();
                     runQuickSort(vecQuick, precioAsc);
                     stop = high_resolution_clock::now();
-                    duration = duration_cast<microseconds>(stop - start);
-                    cout << "Quick Sort:     " << duration.count() << " microsegundos.\n";
+                    cout << "Quick Sort:     " << duration_cast<microseconds>(stop - start).count() << " microsegundos.\n";
 
-                    // 3. Merge Sort
                     start = high_resolution_clock::now();
                     runMergeSort(vecMerge, precioAsc);
                     stop = high_resolution_clock::now();
-                    duration = duration_cast<microseconds>(stop - start);
-                    cout << "Merge Sort:     " << duration.count() << " microsegundos.\n";
+                    cout << "Merge Sort:     " << duration_cast<microseconds>(stop - start).count() << " microsegundos.\n";
 
-                    // Mostramos el primero y ultimo del vector ordenado (Quick) para verificar
-                    cout << "Mas barato: " << vecQuick.front().getPrecio() << " | Mas caro: " << vecQuick.back().getPrecio() << "\n";
-                    
-                    // Actualizamos la lista principal para que quede ordenada
-                    listaProductos = vecQuick;
+                    listaProductos = vecQuick; // Actualizamos la lista principal
                 } 
                 else if (subOpcion == 2) {
                     cout << "\n--- Midiendo Tiempos de Ordenamiento (Calif Descendente) ---\n";
@@ -133,10 +160,15 @@ int main() {
                     stop = high_resolution_clock::now();
                     cout << "Quick Sort:     " << duration_cast<microseconds>(stop - start).count() << " microsegundos.\n";
 
-                    cout << "Mejor Calif: " << vecQuick.front().getCalificacionPromedio() << " | Peor Calif: " << vecQuick.back().getCalificacionPromedio() << "\n";
-                    
-                    // Actualizamos la lista principal
-                    listaProductos = vecQuick;
+                    listaProductos = vecQuick; // Actualizamos la lista principal
+                }
+
+                // Preguntamos si quiere ver la lista ya ordenada
+                char verLista;
+                cout << "¿Desea ver la lista ordenada? (s/n): ";
+                cin >> verLista;
+                if (verLista == 's' || verLista == 'S') {
+                    mostrarProductosPaginado(listaProductos);
                 }
                 break;
             }
@@ -147,8 +179,7 @@ int main() {
                     break;
                 }
                 
-                // Primero ordenamos por ID (Requisito para busqueda binaria)
-                runQuickSort(listaProductos, idAsc);
+                runQuickSort(listaProductos, idAsc); // Ordenar por ID es obligatorio para busqueda binaria
 
                 int targetID;
                 cout << "Ingrese ID a buscar: ";
@@ -156,7 +187,9 @@ int main() {
 
                 int index = binarySearch(listaProductos, targetID);
                 if (index != -1) {
-                    cout << "Producto encontrado: " << listaProductos[index].getNombre() << "\n";
+                    Producto p = listaProductos[index];
+                    cout << "\n--- Producto Encontrado ---\n";
+                    cout << "ID: " << p.getId() << " | " << p.getNombre() << " | $" << p.getPrecio() << "\n";
                 } else {
                     cout << "Producto no encontrado.\n";
                 }
@@ -170,31 +203,25 @@ int main() {
                 }
 
                 cout << "\n--- Parte 3: Busqueda Binaria por ID (Test Masivo) ---\n";
-                
-                // Primero ordenamos por ID (Requisito para busqueda binaria)
                 runQuickSort(listaProductos, idAsc);
 
                 auto startSearch = high_resolution_clock::now();
-                int encontrados = 0;
-                int noEncontrados = 0;
+                int encontrados = 0, noEncontrados = 0;
 
-                // 10 busquedas existentes (IDs 1-50 existen)
                 for(int i=0; i<10; i++) {
                     int target = (rand() % 50) + 1;
                     if(binarySearch(listaProductos, target) != -1) encontrados++;
                 }
-
-                // 10 busquedas NO existentes (IDs > 50)
                 for(int i=0; i<10; i++) {
                     int target = (rand() % 50) + 100;
                     if(binarySearch(listaProductos, target) == -1) noEncontrados++;
                 }
                 
                 auto stopSearch = high_resolution_clock::now();
-                auto durationSearch = duration_cast<nanoseconds>(stopSearch - startSearch); // Nano porque es muy rapido
+                auto durationSearch = duration_cast<nanoseconds>(stopSearch - startSearch);
 
                 cout << "Tiempo total (20 busquedas): " << durationSearch.count() << " nanosegundos.\n";
-                cout << "Exito: Encontrados " << encontrados << "/10 existentes, Confirmados " << noEncontrados << "/10 no existentes.\n";
+                cout << "Exito: " << encontrados << "/10 existentes, " << noEncontrados << "/10 no existentes.\n";
                 break;
             }
 
