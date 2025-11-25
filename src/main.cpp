@@ -15,9 +15,33 @@ bool precioAsc(const Producto& a, const Producto& b) { return a.getPrecio() < b.
 bool califDesc(const Producto& a, const Producto& b) { return a.getCalificacionPromedio() > b.getCalificacionPromedio(); }
 bool idAsc(const Producto& a, const Producto& b) { return a.getId() < b.getId(); }
 
+// MENÚ VISUAL
+void menuVisual() {
+    cout << "\n========= MENU PRINCIPAL =========\n";
+    cout << "1. Generar 50 Productos\n";
+    cout << "2. Ordenar Productos\n";
+    cout << "3. Busqueda Binaria por ID\n";
+    cout << "4. Medir tiempos de busqueda\n";
+    cout << "5. Salir\n";
+    cout << "===================================\n";
+
+    cout << "\n------ ORDENAMIENTO ------\n";
+    cout << "1. Precio (Ascendente)\n";
+    cout << "2. Calificacion (Descendente)\n";
+    cout << "----------------------------------\n";
+
+    cout << "\n--- Algoritmos Disponibles ---\n";
+    cout << "1. Insertion Sort\n";
+    cout << "2. Quick Sort\n";
+    cout << "3. Merge Sort\n";
+    cout << "---------------------------------\n";
+}
+
 int main() {
     srand(time(0));
-
+    
+    menuVisual();
+    
     vector<Producto> listaProductos;
 
     // Datos para generacion aleatoria
